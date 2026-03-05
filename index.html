@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Space - Secure</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* PREMIUM UI CSS (Same as your screenshot) */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; height: 100vh; display: flex; justify-content: center; align-items: center; color: white; }
+    
+    #login-screen { width: 100%; height: 100vh; position: absolute; z-index: 100; backdrop-filter: blur(15px); display: flex; justify-content: center; align-items: center; flex-direction: column; background: rgba(15, 23, 42, 0.8); }
+    .login-box { background: rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 350px; }
+    .login-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; outline: none; background: rgba(0,0,0,0.3); color: white; font-size: 1rem; text-align: center; }
+    .login-box button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; font-size: 1rem; }
+    .login-box button:hover { background: #2563eb; }
+
+    #chat-screen { display: none; width: 100%; max-width: 600px; height: 95vh; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px); border-radius: 20px; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; }
+    
+    .chat-header { padding: 20px; background: rgba(0,0,0,0.4); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .user-info { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.2rem; }
+    .status-dot { height: 12px; width: 12px; background-color: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; transition: 0.3s;}
+    .status-dot.online { background-color: #10b981; box-shadow: 0 0 10px #10b981; }
+    .status-text { font-size: 0.8rem; font-weight: normal; color: #ccc; margin-left: 5px;}
+    
+    .header-icons i { font-size: 1.3rem; margin-left: 20px; cursor: pointer; color: #94a3b8; transition: 0.3s; }
+    .header-icons i:hover { color: white; }
+
+    .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .message-row { display: flex; width: 100%; flex-direction: column; margin-bottom: 10px; }
+    .message { max-width: 70%; padding: 12px 16px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; position: relative; word-wrap: break-word; display: flex; justify-content: space-between; align-items: center; gap: 10px;}
+    .sent-row { align-items: flex-end; } .received-row { align-items: flex-start; }
+    .sent { background: linear-gradient(135deg, #0ea5e9, #2563eb); border-bottom-right-radius: 2px; }
+    .received { background: rgba(255,255,255,0.1); border-bottom-left-radius: 2px; }
+    .msg-actions { font-size: 0.8rem; cursor: pointer; color: rgba(255,255,255,0.6); }
+    .msg-actions:hover { color: #ef4444; }
+
+    .delete-prompt { font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 10px; margin-top: 5px; color: #fbbf24; }
+    .delete-prompt button { background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 10px; }
+    .btn-yes { color: #10b981; } .btn-no { color: #ef4444; }
+
+    .chat-input-area { padding: 15px 20px; background: rgba(0,0,0,0.4); display: flex; gap: 15px; align-items: center; }
+    .chat-input-area input { flex: 1; padding: 15px 20px; border-radius: 30px; border: none; background: rgba(255,255,255,0.1); color: white; outline: none; font-size: 1rem; }
+    .send-btn { background: #3b82f6; color: white; border: none; height: 45px; width: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; transition: 0.2s; display: flex; justify-content: center; align-items: center; }
+
+    .toast { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(16, 185, 129, 0.9); padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 50;}
+
+    /* CALL SCREEN UI */
+    #call-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); z-index: 200; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px;}
+    #remote-video { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+    #local-video { width: 120px; height: 160px; position: absolute; bottom: 100px; right: 20px; border-radius: 15px; object-fit: cover; border: 2px solid #3b82f6; background: #000; }
+    .call-controls { position: absolute; bottom: 30px; display: flex; gap: 20px; background: rgba(0,0,0,0.5); padding: 15px 25px; border-radius: 30px; backdrop-filter: blur(10px); }
+    .ctrl-btn { width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 1.2rem; cursor: pointer; color: white; background: rgba(255,255,255,0.2); transition: 0.3s; }
+    .ctrl-btn.active { background: #ef4444; } /* Red when muted/disabled */
+    .btn-end { background: #ef4444; }
+    .btn-end:hover { background: #dc2626; transform: scale(1.1); }
+    #call-status { position: absolute; top: 40px; font-size: 1.2rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>🔒 Private Space</h2>
+      <input type="text" id="user-name" placeholder="Your Name (e.g. Deepak)">
+      <input type="password" id="room-password" placeholder="Enter Secret Password">
+      <button onclick="login()">Enter Chat</button>
+      <p id="login-error" style="color: #ef4444; margin-top: 10px; font-size: 0.85rem; display: none;">Wrong Password!</p>
+    </div>
+  </div>
+
+  <div id="chat-screen">
+    <div class="toast" id="toast-msg"></div>
+    
+    <div class="chat-header">
+      <div class="user-info">
+        <span class="status-dot" id="status-indicator"></span> 
+        <span id="chat-title">Connecting...</span>
+        <span class="status-text" id="online-text">Offline</span>
+      </div>
+      <div class="header-icons">
+        <i class="fa-solid fa-phone" onclick="initiateCall(false)"></i>
+        <i class="fa-solid fa-video" onclick="initiateCall(true)"></i>
+      </div>
+    </div>
+    
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="chat-input-area">
+      <input type="text" id="message-input" placeholder="Type a secure message..." autocomplete="off">
+      <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+
+    <div id="call-screen">
+      <div id="call-status">Calling...</div>
+      <video id="remote-video" autoplay playsinline></video>
+      <video id="local-video" autoplay playsinline muted></video>
+      <div class="call-controls">
+        <button class="ctrl-btn" id="btn-mic" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
+        <button class="ctrl-btn" id="btn-cam" onclick="toggleCam()"><i class="fa-solid fa-video"></i></button>
+        <button class="ctrl-btn btn-end" onclick="endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ==========================================
+    // 1. SUPABASE KEYS DAAL YAHAN
+    // ==========================================
+    const supabaseUrl = 'https://kjclcnzxdplkhuiemwdc.supabase.co'; 
+    const supabaseKey = 'sb_publishable_StQwZtU6erxBvFi6WQZ5kQ_crlM71Aq';
+    const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    let myName = ""; let partnerName = ""; let roomChannel;
+    const SECRET_PASSWORD = "Secret123"; 
+
+    // WebRTC Variables
+    let localStream; let peerConnection; let isVideoCall = false;
+    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    // ==========================================
+    // 2. LOGIN LOGIC
+    // ==========================================
+    function login() {
+      const nameInput = document.getElementById('user-name').value.trim();
+      const passInput = document.getElementById('room-password').value;
+
+      if(nameInput === "" || passInput === "") return;
+
+      if(passInput === SECRET_PASSWORD) {
+        myName = nameInput;
+        partnerName = (myName.toLowerCase() === "deepak") ? "Nisha" : "Deepak";
+        
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('chat-screen').style.display = 'flex';
+        document.getElementById('chat-title').innerText = partnerName;
+
+        startRealtime();
+        loadMessages();
+      } else { document.getElementById('login-error').style.display = 'block'; }
+    }
+
+    // ==========================================
+    // 3. PRESENCE (Online/Offline) & MESSAGES
+    // ==========================================
+    function startRealtime() {
+      roomChannel = db.channel('private_room', {
+        config: { presence: { key: myName }, broadcast: { self: false } }
+      });
+
+      // User Joined/Left Handlers
+      roomChannel.on('presence', { event: 'sync' }, () => {
+        const state = roomChannel.presenceState();
+        const isPartnerOnline = Object.keys(state).some(key => key !== myName);
+        
+        if(isPartnerOnline) {
+          document.getElementById('status-indicator').classList.add('online');
+          document.getElementById('online-text').innerText = "Online";
+        } else {
+          document.getElementById('status-indicator').classList.remove('online');
+          document.getElementById('online-text').innerText = "Offline";
+        }
+      });
+
+      roomChannel.on('presence', { event: 'join' }, ({ newPresences }) => {
+        showToast(`${newPresences[0].name} is Online`);
+      });
+      roomChannel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        showToast(`${leftPresences[0].name} went Offline`);
+      });
+
+      // Chat Sync
+      roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => { displayMessage(payload.new); });
+      roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => { updateMessageUI(payload.new); });
+
+      // WebRTC Call Signaling (Broadcast)
+      roomChannel.on('broadcast', { event: 'rtc-signal' }, payload => handleCallSignal(payload.payload));
+
+      roomChannel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') await roomChannel.track({ name: myName });
+      });
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast-msg'); toast.innerText = text;
+      toast.style.opacity = '1'; setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+    }
+
+    // ==========================================
+    // 4. CHAT HISTORY & MUTUAL DELETE
+    // ==========================================
+    async function loadMessages() {
+      const { data, error } = await db.from('messages').select('*').order('created_at', { ascending: true });
+      if (error) alert("Database se connect nahi ho raha! Error: " + error.message);
+      else {
+        document.getElementById('chat-box').innerHTML = '';
+        data.forEach(msg => displayMessage(msg));
+      }
+    }
+
+    function displayMessage(msg) {
+      if(msg.is_deleted || document.getElementById(`row-${msg.id}`)) return; 
+
+      const chatBox = document.getElementById('chat-box');
+      const rowDiv = document.createElement('div');
+      rowDiv.id = `row-${msg.id}`;
+      rowDiv.className = (msg.sender_id === myName) ? 'message-row sent-row' : 'message-row received-row';
+      chatBox.appendChild(rowDiv);
+      updateMessageUI(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function updateMessageUI(msg) {
+      const rowDiv = document.getElementById(`row-${msg.id}`);
+      if(!rowDiv) return;
+      if(msg.is_deleted) { rowDiv.remove(); return; }
+
+      let innerHTML = `<div class="message ${msg.sender_id === myName ? 'sent' : 'received'}">
+                         <span>${msg.content}</span>
+                         <i class="fa-solid fa-trash msg-actions" onclick="requestDelete('${msg.id}')"></i>
+                       </div>`;
+      if (msg.delete_requested_by) {
+        if (msg.delete_requested_by === myName) {
+          innerHTML += `<div class="delete-prompt">Waiting for ${partnerName} to accept...</div>`;
+        } else {
+          innerHTML += `<div class="delete-prompt">${partnerName} wants to delete this.
+                          <button class="btn-yes" onclick="approveDelete('${msg.id}', true)">✔️ Yes</button>
+                          <button class="btn-no" onclick="approveDelete('${msg.id}', false)">❌ No</button>
+                        </div>`;
+        }
+      }
+      rowDiv.innerHTML = innerHTML;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+      if (text !== "") {
+        input.value = '';
+        const { error } = await db.from('messages').insert([{ sender_id: myName, receiver_id: partnerName, content: text }]);
+        // YAHAN PATA CHALEGA AGAR RLS BAND NAHI HAI TOH
+        if(error) alert("Message fail ho gaya! RLS disable karo Supabase me. Error: " + error.message);
+      }
+    }
+    document.getElementById('message-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+
+    async function requestDelete(msgId) { await db.from('messages').update({ delete_requested_by: myName }).eq('id', msgId); }
+    async function approveDelete(msgId, isApprove) {
+      if (isApprove) await db.from('messages').update({ is_deleted: true, content: 'DELETED' }).eq('id', msgId);
+      else await db.from('messages').update({ delete_requested_by: null }).eq('id', msgId);
+    }
+
+    // ==========================================
+    // 5. CALLING (VOICE & VIDEO) LOGIC
+    // ==========================================
+    async function initiateCall(videoEnabled) {
+      isVideoCall = videoEnabled;
+      document.getElementById('call-screen').style.display = 'flex';
+      document.getElementById('call-status').innerText = `Calling ${partnerName}...`;
+      
+      localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+      document.getElementById('local-video').srcObject = localStream;
+
+      peerConnection = new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      peerConnection.ontrack = (event) => { document.getElementById('remote-video').srcObject = event.streams[0]; document.getElementById('call-status').innerText = ""; };
+      
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) roomChannel.send({ type: 'broadcast', event: 'rtc-signal', payload: { type: 'ice-candidate', candidate: event.candidate, sender: myName }});
+      };
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      roomChannel.send({ type: 'broadcast', event: 'rtc-signal', payload: { type: 'offer', offer: offer, sender: myName, video: isVideoCall }});
+    }
+
+    async function handleCallSignal(data) {
+      if(data.sender === myName) return;
+
+      if(data.type === 'end-call') { endCallUI(); return; }
+
+      if (!peerConnection) {
+        document.getElementById('call-screen').style.display = 'flex';
+        document.getElementById('call-status').innerText = `${partnerName} is calling...`;
+        isVideoCall = data.video || false;
+        
+        localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+        document.getElementById('local-video').srcObject = localStream;
+
+        peerConnection = new RTCPeerConnection(servers);
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        peerConnection.ontrack = (event) => { document.getElementById('remote-video').srcObject = event.streams[0]; document.getElementById('call-status').innerText = ""; };
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) roomChannel.send({ type: 'broadcast', event: 'rtc-signal', payload: { type: 'ice-candidate', candidate: event.candidate, sender: myName }});
+        };
+      }
+
+      if (data.type === 'offer') {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        roomChannel.send({ type: 'broadcast', event: 'rtc-signal', payload: { type: 'answer', answer: answer, sender: myName }});
+      } else if (data.type === 'answer') {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      } else if (data.type === 'ice-candidate') {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+      }
+    }
+
+    // Call Controls (Mic & Camera)
+    function toggleMic() {
+      const audioTrack = localStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
+      document.getElementById('btn-mic').classList.toggle('active');
+    }
+
+    function toggleCam() {
+      if(!isVideoCall) return; // Voice call me camera nahi chalega
+      const videoTrack = localStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
+      document.getElementById('btn-cam').classList.toggle('active');
+    }
+
+    function endCall() {
+      roomChannel.send({ type: 'broadcast', event: 'rtc-signal', payload: { type: 'end-call', sender: myName }});
+      endCallUI();
+    }
+
+    function endCallUI() {
+      if(peerConnection) { peerConnection.close(); peerConnection = null; }
+      if(localStream) { localStream.getTracks().forEach(track => track.stop()); }
+      document.getElementById('call-screen').style.display = 'none';
+      document.getElementById('remote-video').srcObject = null;
+    }
+  </script>
+</body>
+</html>
